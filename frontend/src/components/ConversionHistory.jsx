@@ -4,7 +4,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { getConversionHistory } from "@/services/api";
-import CurrencyFlag from "@/components/CurrencyFlag";
+
+const FLAGS = {
+  USD: "🇺🇸", EUR: "🇪🇺", GBP: "🇬🇧", INR: "🇮🇳", JPY: "🇯🇵", CHF: "🇨🇭",
+  CAD: "🇨🇦", AUD: "🇦🇺", CNY: "🇨🇳", BRL: "🇧🇷",
+};
 
 export default function ConversionHistory({ showEmpty = false }) {
   const { data, isLoading } = useQuery({
@@ -15,13 +19,11 @@ export default function ConversionHistory({ showEmpty = false }) {
 
   if (isLoading) {
     return (
-      <Card className="border-border/50 bg-card">
-        <CardContent className="p-5">
-          <Skeleton className="h-5 w-32 mb-3" />
-          <div className="space-y-2">
-            {[1, 2, 3].map((i) => (
-              <Skeleton key={i} className="h-10 w-full" />
-            ))}
+      <Card className="border-border bg-card">
+        <CardContent className="p-4">
+          <Skeleton className="h-4 w-32 mb-2" />
+          <div className="space-y-1.5">
+            {[1, 2, 3].map((i) => <Skeleton key={i} className="h-8 w-full" />)}
           </div>
         </CardContent>
       </Card>
@@ -33,55 +35,55 @@ export default function ConversionHistory({ showEmpty = false }) {
   if (conversions.length === 0) {
     if (!showEmpty) return null;
     return (
-      <Card className="border-border/50 bg-card">
-        <CardContent className="p-10 flex flex-col items-center justify-center text-center">
-          <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center mb-3">
-            <History className="w-5 h-5 text-muted-foreground" />
+      <Card className="border-border bg-card">
+        <CardContent className="p-6 flex flex-col items-center justify-center text-center">
+          <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center mb-2">
+            <History className="w-4 h-4 text-muted-foreground" />
           </div>
-          <h3 className="text-sm font-semibold text-foreground mb-1">No Conversions Yet</h3>
-          <p className="text-xs text-muted-foreground">Your history appears after your first conversion.</p>
+          <h3 className="text-xs font-semibold text-foreground mb-1">No Conversions Yet</h3>
+          <p className="text-[11px] text-muted-foreground">Your history appears after your first conversion.</p>
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <Card className="border-border/50 bg-card">
-      <CardContent className="p-5">
-        <div className="flex items-center gap-1.5 mb-4">
-          <History className="w-3.5 h-3.5 text-green" />
+    <Card className="border-border bg-card">
+      <CardContent className="p-4">
+        <div className="flex items-center gap-1.5 mb-3">
+          <History className="w-3 h-3 text-green" />
           <h3 className="text-xs font-semibold text-foreground">Recent Conversions</h3>
         </div>
         <div className="border rounded-lg overflow-hidden">
           <Table>
             <TableHeader>
               <TableRow className="bg-secondary/30">
-                <TableHead className="text-[10px] font-medium uppercase tracking-wider h-8">From</TableHead>
-                <TableHead className="text-[10px] font-medium uppercase tracking-wider h-8">To</TableHead>
-                <TableHead className="text-[10px] font-medium uppercase tracking-wider text-right h-8">Rate</TableHead>
-                <TableHead className="text-[10px] font-medium uppercase tracking-wider text-right h-8">Converted</TableHead>
+                <TableHead className="text-[10px] font-medium uppercase tracking-wider h-7">From</TableHead>
+                <TableHead className="text-[10px] font-medium uppercase tracking-wider h-7">To</TableHead>
+                <TableHead className="text-[10px] font-medium uppercase tracking-wider text-right h-7">Rate</TableHead>
+                <TableHead className="text-[10px] font-medium uppercase tracking-wider text-right h-7">Converted</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {conversions.slice(0, 8).map((c) => (
                 <TableRow key={c.id} className="hover:bg-secondary/20">
-                  <TableCell className="py-2.5">
-                    <div className="flex items-center gap-1.5">
-                      <CurrencyFlag code={c.source_currency} size="sm" />
-                      <span className="text-xs font-medium">{c.source_currency}</span>
-                      <span className="text-[10px] text-muted-foreground">{formatAmount(c.amount)}</span>
+                  <TableCell className="py-1.5">
+                    <div className="flex items-center gap-1">
+                      <span className="text-xs">{FLAGS[c.source_currency] || "🏳️"}</span>
+                      <span className="text-[11px] font-medium">{c.source_currency}</span>
+                      <span className="text-[9px] text-muted-foreground">{formatAmount(c.amount)}</span>
                     </div>
                   </TableCell>
-                  <TableCell className="py-2.5">
-                    <div className="flex items-center gap-1.5">
-                      <CurrencyFlag code={c.target_currency} size="sm" />
-                      <span className="text-xs font-medium">{c.target_currency}</span>
+                  <TableCell className="py-1.5">
+                    <div className="flex items-center gap-1">
+                      <span className="text-xs">{FLAGS[c.target_currency] || "🏳️"}</span>
+                      <span className="text-[11px] font-medium">{c.target_currency}</span>
                     </div>
                   </TableCell>
-                  <TableCell className="text-right py-2.5 text-xs text-muted-foreground">
+                  <TableCell className="text-right py-1.5 text-[11px] text-muted-foreground">
                     {c.exchange_rate.toFixed(4)}
                   </TableCell>
-                  <TableCell className="text-right py-2.5 text-xs font-medium text-green">
+                  <TableCell className="text-right py-1.5 text-[11px] font-medium text-green">
                     {formatAmount(c.converted_amount)}
                   </TableCell>
                 </TableRow>

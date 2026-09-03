@@ -1,5 +1,5 @@
 import json
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 import random
 
 import httpx
@@ -16,7 +16,7 @@ from app.models.rate_cache import RateCache
 
 def _get_cached(db: Session, key: str) -> dict | None:
     row = db.query(RateCache).filter(RateCache.cache_key == key).first()
-    if row and row.expires_at > datetime.now(timezone.utc):
+    if row and row.expires_at > datetime.utcnow():
         return json.loads(row.data)
     return None
 
@@ -24,7 +24,7 @@ def _get_cached(db: Session, key: str) -> dict | None:
 def _set_cache(db: Session, key: str, data: dict, ttl: int):
     existing = db.query(RateCache).filter(RateCache.cache_key == key).first()
     serialized = json.dumps(data)
-    expires = datetime.now(timezone.utc) + timedelta(seconds=ttl)
+    expires = datetime.utcnow() + timedelta(seconds=ttl)
     if existing:
         existing.data = serialized
         existing.expires_at = expires
@@ -66,7 +66,7 @@ async def get_live_rate(db: Session, base: str, target: str) -> dict:
 async def get_historical_data(db: Session, base: str, target: str, days: int = 30) -> dict:
     base = base.upper()
     target = target.upper()
-    today = datetime.now(timezone.utc).date()
+    today = datetime.utcnow().date()
 
     # Get the current live rate as baseline
     base_rate = None
@@ -81,25 +81,18 @@ async def get_historical_data(db: Session, base: str, target: str, days: int = 3
     seed = hash(f"{base}{target}") % (2**32)
     rng = random.Random(seed)
 
-    # Start from a slightly different rate and walk to current
     rate = base_rate * rng.uniform(0.95, 1.05)
     for i in range(days - 1, -1, -1):
         date = today - timedelta(days=i)
         date_str = date.strftime("%Y-%m-%d")
 
-        # Small daily variation (0.1% to 1.5%)
         change_pct = rng.uniform(-0.015, 0.015)
         rate = rate * (1 + change_pct)
-
-        # Slowly converge toward base_rate
         rate = rate + (base_rate - rate) * 0.05
-
-        # Keep within reasonable bounds
         rate = max(base_rate * 0.85, min(base_rate * 1.15, rate))
 
         data_points.append({"date": date_str, "rate": round(rate, 4)})
 
-    # Ensure last point matches live rate
     if data_points and base_rate:
         data_points[-1]["rate"] = round(base_rate, 4)
 

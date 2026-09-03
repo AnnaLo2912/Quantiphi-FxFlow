@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime
 from sqlalchemy import Column, Integer, String, Float, DateTime
 from app.database.base import Base
 
@@ -12,4 +12,4 @@ class ConversionHistory(Base):
     amount = Column(Float, nullable=False)
     converted_amount = Column(Float, nullable=False)
     exchange_rate = Column(Float, nullable=False)
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at = Column(DateTime, default=datetime.utcnow)

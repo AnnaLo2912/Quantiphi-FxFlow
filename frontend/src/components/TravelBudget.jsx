@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Plane, Loader2, Globe } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,6 +11,7 @@ import { calculateTravelBudget, getCurrencies } from "@/services/api";
 import CurrencySelect from "@/components/CurrencySelect";
 
 const FALLBACK_CURRENCIES = ["USD", "EUR", "GBP", "INR", "JPY", "CHF", "CAD", "AUD", "CNY", "BRL"];
+const FLAGS = { USD: "🇺🇸", EUR: "🇪🇺", GBP: "🇬🇧", INR: "🇮🇳", JPY: "🇯🇵", CHF: "🇨🇭", CAD: "🇨🇦", AUD: "🇦🇺", CNY: "🇨🇳", BRL: "🇧🇷" };
 
 export default function TravelBudget({ forceOpen = false }) {
   const [enabled, setEnabled] = useState(forceOpen);
@@ -41,16 +41,15 @@ export default function TravelBudget({ forceOpen = false }) {
   };
 
   return (
-    <Card className="border-border/50 bg-card h-full">
-      <CardContent className="p-5">
-        <div className="flex items-center justify-between mb-4">
+    <Card className="border-border bg-card h-full">
+      <CardContent className="p-4">
+        <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-green/10 flex items-center justify-center">
-              <Plane className="w-3.5 h-3.5 text-green" />
+            <div className="w-6 h-6 rounded-lg bg-green/10 flex items-center justify-center">
+              <Plane className="w-3 h-3 text-green" />
             </div>
             <div>
               <h3 className="text-xs font-semibold text-foreground">Travel Budget</h3>
-              <p className="text-[10px] text-muted-foreground">Compare across currencies</p>
             </div>
           </div>
           {!forceOpen && (
@@ -62,20 +61,18 @@ export default function TravelBudget({ forceOpen = false }) {
         </div>
 
         {showContent && (
-          <div className="space-y-4">
+          <div className="space-y-3">
             <div className="grid grid-cols-[1fr,1fr,auto] gap-2">
               <CurrencySelect value={baseCurrency} onValueChange={setBaseCurrency} currencies={currencies} />
-
               <Input
                 type="number"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 placeholder="Amount"
                 min="0"
-                className="h-12 text-sm"
+                className="h-10 text-sm bg-background"
               />
-
-              <Button onClick={handleCalculate} disabled={mutation.isPending} className="h-12 bg-green hover:bg-green/90 text-black text-xs px-3">
+              <Button onClick={handleCalculate} disabled={mutation.isPending} className="h-10 bg-green hover:bg-green/90 text-primary-foreground text-xs px-3">
                 {mutation.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Globe className="w-3.5 h-3.5" />}
               </Button>
             </div>
@@ -88,9 +85,7 @@ export default function TravelBudget({ forceOpen = false }) {
 
             {mutation.isPending && (
               <div className="space-y-1.5">
-                {[1, 2, 3].map((i) => (
-                  <Skeleton key={i} className="h-9 w-full" />
-                ))}
+                {[1, 2, 3].map((i) => <Skeleton key={i} className="h-9 w-full" />)}
               </div>
             )}
 
@@ -108,16 +103,12 @@ export default function TravelBudget({ forceOpen = false }) {
                       <TableRow key={c.currency} className="hover:bg-secondary/20">
                         <TableCell className="py-2">
                           <div className="flex items-center gap-1.5">
-                            <span className="text-base">{getFlag(c.currency)}</span>
+                            <span className="text-base">{FLAGS[c.currency] || "🏳️"}</span>
                             <span className="text-xs font-medium">{c.currency}</span>
                           </div>
                         </TableCell>
                         <TableCell className="text-right py-2 text-xs font-medium">
-                          {c.currency === result.base_currency ? (
-                            <span className="text-green">{new Intl.NumberFormat("en-US", { minimumFractionDigits: 2 }).format(c.amount)}</span>
-                          ) : (
-                            new Intl.NumberFormat("en-US", { minimumFractionDigits: 2 }).format(c.amount)
-                          )}
+                          {new Intl.NumberFormat("en-US", { minimumFractionDigits: 2 }).format(c.amount)}
                         </TableCell>
                       </TableRow>
                     ))}
@@ -130,13 +121,4 @@ export default function TravelBudget({ forceOpen = false }) {
       </CardContent>
     </Card>
   );
-}
-
-const FLAGS = {
-  USD: "🇺🇸", EUR: "🇪🇺", GBP: "🇬🇧", INR: "🇮🇳", JPY: "🇯🇵", CHF: "🇨🇭",
-  CAD: "🇨🇦", AUD: "🇦🇺", CNY: "🇨🇳", BRL: "🇧🇷",
-};
-
-function getFlag(code) {
-  return FLAGS[code] || "🏳️";
 }

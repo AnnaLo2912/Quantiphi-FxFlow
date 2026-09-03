@@ -1,7 +1,12 @@
+import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useHistoricalRates } from "@/hooks/useHistoricalRates";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
-import { Maximize2, TrendingUp } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { TrendingUp, ArrowLeftRight } from "lucide-react";
+import CurrencySelect from "@/components/CurrencySelect";
+import { getCurrencies } from "@/services/api";
 import {
   LineChart,
   Line,
@@ -17,15 +22,49 @@ const FLAGS = {
   CAD: "🇨🇦", AUD: "🇦🇺", CNY: "🇨🇳", BRL: "🇧🇷",
 };
 
-export default function RateChart({ from, to }) {
-  const { data, isLoading, isError } = useHistoricalRates(from, to, 30);
+const POPULAR = ["USD", "EUR", "GBP", "INR", "JPY", "CHF", "CAD", "AUD", "CNY"];
+
+export default function RateChart({ from, to, onPairChange }) {
+  const [chartFrom, setChartFrom] = useState(from);
+  const [chartTo, setChartTo] = useState(to);
+
+  const { data: currencyData } = useQuery({
+    queryKey: ["currencies"],
+    queryFn: getCurrencies,
+    staleTime: 3600000,
+  });
+
+  const currencies = currencyData?.currencies || POPULAR.map((c) => ({ code: c, name: c }));
+
+  useEffect(() => {
+    setChartFrom(from);
+    setChartTo(to);
+  }, [from, to]);
+
+  const handleFromChange = (val) => {
+    setChartFrom(val);
+    onPairChange?.(val, chartTo);
+  };
+
+  const handleToChange = (val) => {
+    setChartTo(val);
+    onPairChange?.(chartFrom, val);
+  };
+
+  const handleSwap = () => {
+    setChartFrom(chartTo);
+    setChartTo(chartFrom);
+    onPairChange?.(chartTo, chartFrom);
+  };
+
+  const { data, isLoading, isError } = useHistoricalRates(chartFrom, chartTo, 30);
 
   if (isLoading) {
     return (
-      <Card className="border-border/50 bg-card h-full">
-        <CardContent className="p-5">
-          <Skeleton className="h-5 w-40 mb-4" />
-          <Skeleton className="h-[220px] w-full" />
+      <Card className="border-border bg-card h-full">
+        <CardContent className="p-4">
+          <Skeleton className="h-4 w-32 mb-3" />
+          <Skeleton className="h-[180px] w-full" />
         </CardContent>
       </Card>
     );
@@ -33,9 +72,18 @@ export default function RateChart({ from, to }) {
 
   if (isError || !data?.data?.length) {
     return (
-      <Card className="border-border/50 bg-card h-full">
-        <CardContent className="p-5">
-          <h3 className="text-sm font-semibold mb-2">{from} → {to}</h3>
+      <Card className="border-border bg-card h-full">
+        <CardContent className="p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-xs font-semibold text-foreground">FX Trends</span>
+          </div>
+          <div className="flex items-center gap-2 mb-3">
+            <CurrencySelect value={chartFrom} onValueChange={handleFromChange} currencies={currencies} placeholder="From" />
+            <Button variant="ghost" size="icon" onClick={handleSwap} className="h-8 w-8 shrink-0">
+              <ArrowLeftRight className="w-3.5 h-3.5 text-muted-foreground" />
+            </Button>
+            <CurrencySelect value={chartTo} onValueChange={handleToChange} currencies={currencies} placeholder="To" />
+          </div>
           <p className="text-xs text-muted-foreground">Unable to load historical data.</p>
         </CardContent>
       </Card>
@@ -57,44 +105,50 @@ export default function RateChart({ from, to }) {
   const isPositive = change >= 0;
 
   return (
-    <Card className="border-border/50 bg-card h-full">
-      <CardContent className="p-5">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1.5">
-              <span className="text-lg">{FLAGS[from] || "🏳️"}</span>
-              <span className="text-lg">{FLAGS[to] || "🏳️"}</span>
-            </div>
-            <div>
-              <h3 className="text-sm font-semibold">{from}{to}</h3>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">30 Day History</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className={`text-xs font-medium flex items-center gap-1 ${isPositive ? 'text-green' : 'text-red-400'}`}>
-              <TrendingUp className={`w-3 h-3 ${!isPositive ? 'rotate-180' : ''}`} />
-              {isPositive ? '+' : ''}{changePercent}%
-            </span>
-          </div>
+    <Card className="border-border bg-card h-full">
+      <CardContent className="p-4">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-xs font-semibold text-foreground">FX Trends</span>
+          <span className={`text-xs font-medium flex items-center gap-1 ${isPositive ? 'text-green' : 'text-red-500'}`}>
+            <TrendingUp className={`w-3 h-3 ${!isPositive ? 'rotate-180' : ''}`} />
+            {isPositive ? '+' : ''}{changePercent}%
+          </span>
         </div>
 
-        <div className="mb-3">
-          <span className="text-2xl font-bold">{latestRate?.toFixed(4)}</span>
+        <div className="flex items-center gap-2 mb-3">
+          <CurrencySelect value={chartFrom} onValueChange={handleFromChange} currencies={currencies} placeholder="From" />
+          <Button variant="ghost" size="icon" onClick={handleSwap} className="h-8 w-8 shrink-0">
+            <ArrowLeftRight className="w-3.5 h-3.5 text-muted-foreground" />
+          </Button>
+          <CurrencySelect value={chartTo} onValueChange={handleToChange} currencies={currencies} placeholder="To" />
         </div>
 
-        <div className="h-[200px]">
+        <div className="flex items-center gap-2 mb-2">
+          <div className="flex items-center gap-1">
+            <span className="text-sm">{FLAGS[chartFrom] || "🏳️"}</span>
+            <span className="text-sm">{FLAGS[chartTo] || "🏳️"}</span>
+          </div>
+          <div>
+            <h3 className="text-xs font-semibold">{chartFrom}{chartTo}</h3>
+            <p className="text-[9px] text-muted-foreground uppercase tracking-wider">30 Day History</p>
+          </div>
+          <span className="ml-auto text-lg font-bold">{latestRate?.toFixed(4)}</span>
+        </div>
+
+        <div className="h-[180px]">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={chartData} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#262626" vertical={false} />
+              <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
               <XAxis
                 dataKey="date"
-                tick={{ fontSize: 10, fill: "#737373" }}
-                axisLine={{ stroke: "#262626" }}
+                tick={{ fontSize: 10 }}
+                className="text-muted-foreground"
                 tickLine={false}
               />
               <YAxis
                 domain={[minRate - padding, maxRate + padding]}
-                tick={{ fontSize: 10, fill: "#737373" }}
+                tick={{ fontSize: 10 }}
+                className="text-muted-foreground"
                 axisLine={false}
                 tickLine={false}
                 tickFormatter={(v) => v.toFixed(2)}
@@ -102,14 +156,9 @@ export default function RateChart({ from, to }) {
               />
               <Tooltip
                 contentStyle={{
-                  backgroundColor: "#1a1a1a",
-                  border: "1px solid #262626",
                   borderRadius: "8px",
                   fontSize: "11px",
-                  boxShadow: "0 4px 20px rgba(0,0,0,0.5)",
                 }}
-                labelStyle={{ color: "#a3a3a3" }}
-                itemStyle={{ color: "#22c55e" }}
                 formatter={(value) => [value.toFixed(4), "Rate"]}
               />
               <Line
@@ -118,7 +167,7 @@ export default function RateChart({ from, to }) {
                 stroke="#22c55e"
                 strokeWidth={2}
                 dot={false}
-                activeDot={{ r: 4, fill: "#22c55e", stroke: "#0a0a0a", strokeWidth: 2 }}
+                activeDot={{ r: 4, fill: "#22c55e", strokeWidth: 2 }}
               />
             </LineChart>
           </ResponsiveContainer>

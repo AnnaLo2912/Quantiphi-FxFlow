@@ -22,10 +22,10 @@ export default function Dashboard() {
 
   return (
     <TooltipProvider>
-      <div className="min-h-[calc(100vh-3.5rem)]">
-        <main className="p-4 lg:p-5">
+      <div className="min-h-[calc(100vh-3rem)]">
+        <main className="p-3 lg:p-4">
           <div className="max-w-[1400px] mx-auto">
-            <div className="grid grid-cols-12 gap-4 auto-rows-min">
+            <div className="grid grid-cols-12 gap-3 auto-rows-min">
               {/* Row 1: Converter + Chart */}
               <div className="col-span-12 xl:col-span-5">
                 <ConverterCard onPairChange={handlePairChange} />

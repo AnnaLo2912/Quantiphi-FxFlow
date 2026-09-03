@@ -1,5 +1,5 @@
-from datetime import datetime, timezone
-from sqlalchemy import Column, Integer, String, Float, DateTime, Text
+from datetime import datetime
+from sqlalchemy import Column, Integer, String, DateTime, Text
 from app.database.base import Base
 
 
@@ -10,4 +10,4 @@ class RateCache(Base):
     cache_key = Column(String(255), unique=True, nullable=False, index=True)
     data = Column(Text, nullable=False)
     expires_at = Column(DateTime, nullable=False)
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at = Column(DateTime, default=datetime.utcnow)

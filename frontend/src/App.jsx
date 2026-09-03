@@ -1,4 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ThemeProvider } from "@/components/ThemeProvider";
 import Header from "@/components/Header";
 import Dashboard from "@/pages/Dashboard";
 
@@ -14,12 +15,14 @@ const queryClient = new QueryClient({
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <div className="min-h-screen bg-background">
-        <Header />
-        <main>
-          <Dashboard />
-        </main>
-      </div>
+      <ThemeProvider>
+        <div className="min-h-screen bg-background">
+          <Header />
+          <main>
+            <Dashboard />
+          </main>
+        </div>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }

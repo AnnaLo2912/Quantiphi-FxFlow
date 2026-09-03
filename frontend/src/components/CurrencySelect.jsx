@@ -36,7 +36,7 @@ export default function CurrencySelect({ value, onValueChange, currencies, place
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="flex h-12 w-full items-center justify-between rounded-lg border border-border bg-[#1a1a1a] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green/50"
+        className="flex h-10 w-full items-center justify-between rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring/50"
       >
         <div className="flex items-center gap-2">
           {selected && (
@@ -51,8 +51,7 @@ export default function CurrencySelect({ value, onValueChange, currencies, place
       </button>
 
       {open && (
-        <div className="absolute z-50 w-full mt-1 bg-[#1a1a1a] border border-border rounded-lg shadow-xl shadow-black/50 overflow-hidden">
-          {/* Search Input */}
+        <div className="absolute z-50 w-full mt-1 bg-card border border-border rounded-lg shadow-xl shadow-black/20 dark:shadow-black/50 overflow-hidden">
           <div className="p-2 border-b border-border">
             <div className="relative">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
@@ -62,12 +61,11 @@ export default function CurrencySelect({ value, onValueChange, currencies, place
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search currency..."
-                className="w-full h-9 pl-8 pr-3 text-sm bg-[#111] border border-border rounded-md focus:outline-none focus:ring-1 focus:ring-green/50 placeholder:text-muted-foreground"
+                className="w-full h-9 pl-8 pr-3 text-sm bg-background border border-input rounded-md focus:outline-none focus:ring-1 focus:ring-ring/50 placeholder:text-muted-foreground"
               />
             </div>
           </div>
 
-          {/* Currency List */}
           <div className="max-h-[250px] overflow-y-auto">
             {filtered.length === 0 ? (
               <div className="p-3 text-sm text-muted-foreground text-center">No currencies found</div>
