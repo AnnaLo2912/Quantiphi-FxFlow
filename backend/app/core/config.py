@@ -5,6 +5,7 @@ load_dotenv()
 
 EXCHANGE_RATE_API_KEY = os.getenv("EXCHANGE_RATE_API_KEY", "")
 EXCHANGE_RATE_BASE_URL = os.getenv("EXCHANGE_RATE_BASE_URL", "https://v6.exchangerate-api.com/v6")
+FRANKFURTER_BASE_URL = os.getenv("FRANKFURTER_BASE_URL", "https://api.frankfurter.dev/v1")
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./fxflow.db")
 
 CACHE_TTL_LIVE = 300  # 5 minutes

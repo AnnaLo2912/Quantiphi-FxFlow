@@ -262,3 +262,57 @@ pytest tests/ -v
 - PWA support
 - Rate prediction/forecasting
 - Multi-language support
+
+---
+
+## Deploying to Vercel
+
+This repository is configured as a Vercel project with the React frontend as the static build and FastAPI exposed through the serverless entrypoint at `api/index.py`.
+
+### 1. Create a persistent database
+
+Vercel's filesystem is ephemeral, so use a hosted PostgreSQL database for favorites, conversion history, and the rate cache. Neon, Supabase, and Vercel Postgres are suitable options. Copy the provider's SQLAlchemy connection URL.
+
+### 2. Import the repository into Vercel
+
+1. Push the project to GitHub, GitLab, or Bitbucket.
+2. In Vercel, choose **Add New Project** and import the repository.
+3. Leave the project root as the repository root.
+4. Vercel will use `vercel.json` to build `frontend` and route `/api/*` to FastAPI.
+
+### 3. Add Vercel environment variables
+
+Add these variables in **Project Settings > Environment Variables**:
+
+```text
+EXCHANGE_RATE_API_KEY=your_exchange_rate_api_key
+EXCHANGE_RATE_BASE_URL=https://v6.exchangerate-api.com/v6
+FRANKFURTER_BASE_URL=https://api.frankfurter.dev/v1
+DATABASE_URL=your_postgresql_connection_url
+```
+
+Do not commit `.env` files or API keys. The frontend uses same-origin `/api` requests, so no frontend API URL variable is required.
+
+### 4. Deploy and verify
+
+After deployment, verify:
+
+```text
+https://your-domain.vercel.app/api/health
+```
+
+It should return:
+
+```json
+{"status":"ok"}
+```
+
+Then test conversion, historical rates, favorites, history, and Travel Budget from the deployed UI. Each new Git push can trigger a new Vercel deployment.
+
+### Local deployment-equivalent checks
+
+```bash
+python -m compileall backend/app
+cd backend && pytest tests/ -v
+cd ../frontend && npm run build
+```

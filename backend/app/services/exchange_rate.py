@@ -1,6 +1,5 @@
 import json
 from datetime import datetime, timedelta
-import random
 
 import httpx
 from sqlalchemy.orm import Session
@@ -8,6 +7,7 @@ from sqlalchemy.orm import Session
 from app.core.config import (
     EXCHANGE_RATE_API_KEY,
     EXCHANGE_RATE_BASE_URL,
+    FRANKFURTER_BASE_URL,
     CACHE_TTL_LIVE,
     CACHE_TTL_HISTORICAL,
 )
@@ -66,42 +66,50 @@ async def get_live_rate(db: Session, base: str, target: str) -> dict:
 async def get_historical_data(db: Session, base: str, target: str, days: int = 30) -> dict:
     base = base.upper()
     target = target.upper()
-    today = datetime.utcnow().date()
 
-    # Get the current live rate as baseline
-    base_rate = None
-    try:
-        current = await get_live_rate(db, base, target)
-        base_rate = current["rate"]
-    except Exception:
-        base_rate = 1.0
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        latest_resp = await client.get(
+            f"{FRANKFURTER_BASE_URL}/latest",
+            params={"base": base, "symbols": target},
+        )
+        latest_resp.raise_for_status()
+        latest_data = latest_resp.json()
 
-    # Generate realistic historical data with consistent random seed per pair
-    data_points = []
-    seed = hash(f"{base}{target}") % (2**32)
-    rng = random.Random(seed)
+        latest_date = latest_data.get("date")
+        if not latest_date:
+            raise Exception("Frankfurter returned no latest date")
 
-    rate = base_rate * rng.uniform(0.95, 1.05)
-    for i in range(days - 1, -1, -1):
-        date = today - timedelta(days=i)
-        date_str = date.strftime("%Y-%m-%d")
+        end_date = datetime.strptime(latest_date, "%Y-%m-%d").date()
+        start_date = end_date - timedelta(days=days - 1)
+        cache_key = f"historical:{base}:{target}:{start_date}:{end_date}"
+        cached = _get_cached(db, cache_key)
+        if cached:
+            return cached
 
-        change_pct = rng.uniform(-0.015, 0.015)
-        rate = rate * (1 + change_pct)
-        rate = rate + (base_rate - rate) * 0.05
-        rate = max(base_rate * 0.85, min(base_rate * 1.15, rate))
+        url = f"{FRANKFURTER_BASE_URL}/{start_date}..{end_date}"
+        resp = await client.get(url, params={"base": base, "symbols": target})
+        resp.raise_for_status()
+        data = resp.json()
 
-        data_points.append({"date": date_str, "rate": round(rate, 4)})
+    if not isinstance(data.get("rates"), dict):
+        raise Exception("Frankfurter returned no historical rates")
 
-    if data_points and base_rate:
-        data_points[-1]["rate"] = round(base_rate, 4)
+    data_points = [
+        {"date": date, "rate": round(rates[target], 4)}
+        for date, rates in sorted(data["rates"].items())
+        if target in rates
+    ]
+    if not data_points:
+        raise Exception(f"No historical rates found for {base} to {target}")
 
-    return {
+    result = {
         "from": base,
         "to": target,
         "period": f"{days}d",
         "data": data_points,
     }
+    _set_cache(db, cache_key, result, CACHE_TTL_HISTORICAL)
+    return result
 
 
 async def get_available_currencies(db: Session) -> dict:

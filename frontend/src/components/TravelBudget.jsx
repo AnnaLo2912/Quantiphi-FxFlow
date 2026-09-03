@@ -32,12 +32,23 @@ export default function TravelBudget({ forceOpen = false }) {
   const mutation = useMutation({
     mutationFn: ({ baseCurrency, amount }) => calculateTravelBudget(baseCurrency, parseFloat(amount)),
     onSuccess: (data) => setResult(data),
+    onError: (err) => setResult(null),
   });
 
   const handleCalculate = () => {
     const num = parseFloat(amount);
     if (!num || num <= 0) return;
     mutation.mutate({ baseCurrency, amount: num });
+  };
+
+  const handleToggle = (checked) => {
+    setEnabled(checked);
+    if (checked && !result) {
+      const num = parseFloat(amount);
+      if (num > 0) {
+        mutation.mutate({ baseCurrency, amount: num });
+      }
+    }
   };
 
   return (
@@ -48,14 +59,12 @@ export default function TravelBudget({ forceOpen = false }) {
             <div className="w-6 h-6 rounded-lg bg-green/10 flex items-center justify-center">
               <Plane className="w-3 h-3 text-green" />
             </div>
-            <div>
-              <h3 className="text-xs font-semibold text-foreground">Travel Budget</h3>
-            </div>
+            <h3 className="text-xs font-semibold text-foreground">Travel Budget</h3>
           </div>
           {!forceOpen && (
             <div className="flex items-center gap-2">
               <span className="text-[10px] text-muted-foreground">{enabled ? "ON" : "OFF"}</span>
-              <Switch checked={enabled} onCheckedChange={setEnabled} />
+              <Switch checked={enabled} onCheckedChange={handleToggle} />
             </div>
           )}
         </div>
@@ -89,25 +98,25 @@ export default function TravelBudget({ forceOpen = false }) {
               </div>
             )}
 
-            {result && (
+            {result && result.conversions && (
               <div className="border rounded-lg overflow-hidden">
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-secondary/30">
-                      <TableHead className="text-[10px] font-medium uppercase tracking-wider h-8">Currency</TableHead>
-                      <TableHead className="text-[10px] font-medium uppercase tracking-wider text-right h-8">Amount</TableHead>
+                      <TableHead className="text-[10px] font-medium uppercase tracking-wider h-7">Currency</TableHead>
+                      <TableHead className="text-[10px] font-medium uppercase tracking-wider text-right h-7">Amount</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {result.conversions.map((c) => (
                       <TableRow key={c.currency} className="hover:bg-secondary/20">
-                        <TableCell className="py-2">
+                        <TableCell className="py-1.5">
                           <div className="flex items-center gap-1.5">
-                            <span className="text-base">{FLAGS[c.currency] || "🏳️"}</span>
-                            <span className="text-xs font-medium">{c.currency}</span>
+                            <span className="text-sm">{FLAGS[c.currency] || "🏳️"}</span>
+                            <span className="text-[11px] font-medium">{c.currency}</span>
                           </div>
                         </TableCell>
-                        <TableCell className="text-right py-2 text-xs font-medium">
+                        <TableCell className="text-right py-1.5 text-[11px] font-medium">
                           {new Intl.NumberFormat("en-US", { minimumFractionDigits: 2 }).format(c.amount)}
                         </TableCell>
                       </TableRow>
