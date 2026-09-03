@@ -5,8 +5,7 @@ import Favorites from "@/components/Favorites";
 import RateChart from "@/components/RateChart";
 import ConversionHistory from "@/components/ConversionHistory";
 import TravelBudget from "@/components/TravelBudget";
-import BackgroundEffect from "@/components/BackgroundEffect";
-import SpotlightCard from "@/components/SpotlightCard";
+import Sidebar from "@/components/Sidebar";
 
 export default function Dashboard() {
   const [fromCurrency, setFromCurrency] = useState("USD");
@@ -24,29 +23,26 @@ export default function Dashboard() {
 
   return (
     <TooltipProvider>
-      <BackgroundEffect />
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-        <SpotlightCard>
-          <div className="max-w-3xl mx-auto">
-            <ConverterCard onPairChange={handlePairChange} />
+      <div className="flex min-h-[calc(100vh-4rem)]">
+        <Sidebar />
+        <main className="flex-1 p-6 lg:p-8 overflow-auto">
+          <div className="max-w-[1200px] mx-auto space-y-6">
+            {/* Favorites */}
+            <Favorites onSelect={handleFavoriteSelect} />
+
+            {/* Main Grid: Converter + Chart */}
+            <div className="grid grid-cols-1 xl:grid-cols-[1fr,1fr] gap-6">
+              <ConverterCard onPairChange={handlePairChange} />
+              <RateChart from={fromCurrency} to={toCurrency} />
+            </div>
+
+            {/* Travel Budget */}
+            <TravelBudget />
+
+            {/* Recent Conversions */}
+            <ConversionHistory />
           </div>
-        </SpotlightCard>
-
-        <div className="max-w-3xl mx-auto">
-          <Favorites onSelect={handleFavoriteSelect} />
-        </div>
-
-        <div className="max-w-3xl mx-auto">
-          <RateChart from={fromCurrency} to={toCurrency} />
-        </div>
-
-        <div className="max-w-3xl mx-auto">
-          <TravelBudget />
-        </div>
-
-        <div className="max-w-3xl mx-auto">
-          <ConversionHistory />
-        </div>
+        </main>
       </div>
     </TooltipProvider>
   );

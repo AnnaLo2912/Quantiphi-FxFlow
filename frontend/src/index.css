@@ -1,25 +1,27 @@
 @import "tailwindcss";
 
 @theme {
-  --color-background: #0a0a0f;
-  --color-foreground: #e4e4e7;
-  --color-card: #111118;
-  --color-card-foreground: #e4e4e7;
-  --color-primary: #22c55e;
-  --color-primary-foreground: #000000;
-  --color-secondary: #1a1a24;
-  --color-secondary-foreground: #a1a1aa;
-  --color-muted: #18181f;
-  --color-muted-foreground: #71717a;
-  --color-accent: #1e1e2a;
-  --color-accent-foreground: #e4e4e7;
+  --color-background: #0b1120;
+  --color-foreground: #e2e8f0;
+  --color-card: #111a2e;
+  --color-card-foreground: #e2e8f0;
+  --color-primary: #22d3ee;
+  --color-primary-foreground: #0b1120;
+  --color-secondary: #162032;
+  --color-secondary-foreground: #94a3b8;
+  --color-muted: #131d30;
+  --color-muted-foreground: #64748b;
+  --color-accent: #1e293b;
+  --color-accent-foreground: #e2e8f0;
   --color-destructive: #ef4444;
   --color-destructive-foreground: #ffffff;
-  --color-border: #27272a;
-  --color-input: #27272a;
-  --color-ring: #22c55e;
+  --color-border: #1e293b;
+  --color-input: #1e293b;
+  --color-ring: #22d3ee;
   --color-success: #22c55e;
   --color-warning: #eab308;
+  --color-cyan: #22d3ee;
+  --color-cyan-dim: rgba(34, 211, 238, 0.15);
   --radius-lg: 0.75rem;
   --radius-md: 0.5rem;
   --radius-sm: 0.375rem;
@@ -48,4 +50,14 @@ body {
 ::-webkit-scrollbar-thumb {
   background: var(--color-border);
   border-radius: 3px;
+}
+
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
 }
