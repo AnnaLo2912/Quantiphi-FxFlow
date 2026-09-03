@@ -1,15 +1,14 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeftRight, Star, RefreshCw, TrendingUp, Clock, AlertCircle } from "lucide-react";
+import { ArrowLeftRight, Star, RefreshCw, TrendingUp, Clock, AlertCircle, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { useConvertMutation } from "@/hooks/useConversion";
 import { useAddFavorite } from "@/hooks/useFavorites";
 import { getCurrencies } from "@/services/api";
-import CurrencyFlag from "@/components/CurrencyFlag";
+import CurrencySelect from "@/components/CurrencySelect";
 
 const POPULAR = ["USD", "EUR", "GBP", "INR", "JPY", "CHF", "CAD", "AUD", "CNY"];
 
@@ -18,6 +17,7 @@ export default function ConverterCard({ onPairChange }) {
   const [to, setTo] = useState("INR");
   const [amount, setAmount] = useState("1000");
   const [result, setResult] = useState(null);
+  const [favSaved, setFavSaved] = useState(false);
 
   const { data: currencyData } = useQuery({
     queryKey: ["currencies"],
@@ -50,7 +50,21 @@ export default function ConverterCard({ onPairChange }) {
   };
 
   const handleFavorite = () => {
-    addFavorite.mutate({ from, to });
+    setFavSaved(false);
+    addFavorite.mutate(
+      { from, to },
+      {
+        onSuccess: () => {
+          setFavSaved(true);
+          setTimeout(() => setFavSaved(false), 2000);
+        },
+        onError: (err) => {
+          // Already exists or error — show brief feedback
+          setFavSaved(true);
+          setTimeout(() => setFavSaved(false), 2000);
+        },
+      }
+    );
   };
 
   const getCurrencyName = (code) => currencies.find((c) => c.code === code)?.name || code;
@@ -60,9 +74,19 @@ export default function ConverterCard({ onPairChange }) {
       <div className="px-5 py-3.5 border-b border-border/50">
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-semibold text-foreground">Currency Converter</h2>
-          <Button variant="ghost" size="sm" onClick={handleFavorite} className="gap-1.5 text-muted-foreground hover:text-green h-8 px-2">
-            <Star className="w-3.5 h-3.5" />
-            <span className="text-xs">Save</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleFavorite}
+            disabled={addFavorite.isPending}
+            className="gap-1.5 text-muted-foreground hover:text-green h-8 px-2"
+          >
+            {favSaved ? (
+              <Check className="w-3.5 h-3.5 text-green" />
+            ) : (
+              <Star className="w-3.5 h-3.5" />
+            )}
+            <span className="text-xs">{favSaved ? "Saved" : "Save"}</span>
           </Button>
         </div>
       </div>
@@ -72,25 +96,7 @@ export default function ConverterCard({ onPairChange }) {
           {/* From */}
           <div className="space-y-3">
             <label className="text-[10px] font-medium text-green uppercase tracking-wider">From</label>
-            <Select value={from} onValueChange={(v) => { setFrom(v); setResult(null); }}>
-              <SelectTrigger className="h-12 bg-[#1a1a1a] border-border/50 text-sm">
-                <div className="flex items-center gap-2">
-                  <CurrencyFlag code={from} size="sm" />
-                  <SelectValue />
-                </div>
-              </SelectTrigger>
-              <SelectContent className="bg-[#1a1a1a] border-border/50 shadow-xl shadow-black/50 max-h-[250px]">
-                {currencies.map((c) => (
-                  <SelectItem key={c.code} value={c.code} className="py-2">
-                    <div className="flex items-center gap-2">
-                      <CurrencyFlag code={c.code} size="sm" />
-                      <span className="font-medium text-sm">{c.code}</span>
-                      <span className="text-muted-foreground text-xs">{c.name}</span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <CurrencySelect value={from} onValueChange={(v) => { setFrom(v); setResult(null); }} currencies={currencies} />
             <Input
               type="number"
               value={amount}
@@ -117,25 +123,7 @@ export default function ConverterCard({ onPairChange }) {
           {/* To */}
           <div className="space-y-3">
             <label className="text-[10px] font-medium text-green uppercase tracking-wider">To</label>
-            <Select value={to} onValueChange={(v) => { setTo(v); setResult(null); }}>
-              <SelectTrigger className="h-12 bg-[#1a1a1a] border-border/50 text-sm">
-                <div className="flex items-center gap-2">
-                  <CurrencyFlag code={to} size="md" />
-                  <SelectValue />
-                </div>
-              </SelectTrigger>
-              <SelectContent className="bg-[#1a1a1a] border-border/50 shadow-xl shadow-black/50 max-h-[250px]">
-                {currencies.map((c) => (
-                  <SelectItem key={c.code} value={c.code} className="py-2">
-                    <div className="flex items-center gap-2">
-                      <CurrencyFlag code={c.code} size="sm" />
-                      <span className="font-medium text-sm">{c.code}</span>
-                      <span className="text-muted-foreground text-xs">{c.name}</span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <CurrencySelect value={to} onValueChange={(v) => { setTo(v); setResult(null); }} currencies={currencies} />
             <Input
               readOnly
               value={result ? formatNumber(result.converted_amount) : ""}

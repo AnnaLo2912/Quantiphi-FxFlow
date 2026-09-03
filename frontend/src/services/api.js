@@ -27,7 +27,7 @@ export async function getFavorites() {
 export async function addFavorite(from, to) {
   return request("/favorites", {
     method: "POST",
-    body: JSON.stringify({ from, to }),
+    body: JSON.stringify({ from: from, to: to }),
   });
 }
 
@@ -42,7 +42,7 @@ export async function getConversionHistory() {
 export async function calculateTravelBudget(baseCurrency, amount) {
   return request("/travel-budget", {
     method: "POST",
-    body: JSON.stringify({ base_currency: baseCurrency, amount }),
+    body: JSON.stringify({ base_currency: baseCurrency, amount: amount }),
   });
 }
 

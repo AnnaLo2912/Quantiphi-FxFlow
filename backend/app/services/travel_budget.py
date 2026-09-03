@@ -8,10 +8,10 @@ async def calculate_travel_budget(db: Session, base_currency: str, amount: float
     base_currency = base_currency.upper()
     conversions = []
 
-    for currency in MAJOR_CURRENCIES:
-        if currency == base_currency:
-            conversions.append({"currency": currency, "amount": round(amount, 2)})
-            continue
+    # Filter out base currency from target list
+    target_currencies = [c for c in MAJOR_CURRENCIES if c != base_currency]
+
+    for currency in target_currencies:
         try:
             rate_data = await get_live_rate(db, base_currency, currency)
             converted = round(amount * rate_data["rate"], 2)

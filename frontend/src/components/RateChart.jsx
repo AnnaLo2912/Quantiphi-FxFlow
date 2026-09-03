@@ -3,15 +3,19 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
 import { Maximize2, TrendingUp } from "lucide-react";
 import {
-  AreaChart,
-  Area,
+  LineChart,
+  Line,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import CurrencyFlag from "@/components/CurrencyFlag";
+
+const FLAGS = {
+  USD: "🇺🇸", EUR: "🇪🇺", GBP: "🇬🇧", INR: "🇮🇳", JPY: "🇯🇵", CHF: "🇨🇭",
+  CAD: "🇨🇦", AUD: "🇦🇺", CNY: "🇨🇳", BRL: "🇧🇷",
+};
 
 export default function RateChart({ from, to }) {
   const { data, isLoading, isError } = useHistoricalRates(from, to, 30);
@@ -58,8 +62,8 @@ export default function RateChart({ from, to }) {
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-1.5">
-              <CurrencyFlag code={from} size="sm" />
-              <CurrencyFlag code={to} size="sm" />
+              <span className="text-lg">{FLAGS[from] || "🏳️"}</span>
+              <span className="text-lg">{FLAGS[to] || "🏳️"}</span>
             </div>
             <div>
               <h3 className="text-sm font-semibold">{from}{to}</h3>
@@ -71,9 +75,6 @@ export default function RateChart({ from, to }) {
               <TrendingUp className={`w-3 h-3 ${!isPositive ? 'rotate-180' : ''}`} />
               {isPositive ? '+' : ''}{changePercent}%
             </span>
-            <button className="w-7 h-7 rounded bg-secondary flex items-center justify-center hover:bg-accent transition-colors">
-              <Maximize2 className="w-3.5 h-3.5 text-muted-foreground" />
-            </button>
           </div>
         </div>
 
@@ -83,13 +84,7 @@ export default function RateChart({ from, to }) {
 
         <div className="h-[200px]">
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={chartData} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
-              <defs>
-                <linearGradient id="colorRate" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#22c55e" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="#22c55e" stopOpacity={0} />
-                </linearGradient>
-              </defs>
+            <LineChart data={chartData} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#262626" vertical={false} />
               <XAxis
                 dataKey="date"
@@ -117,16 +112,15 @@ export default function RateChart({ from, to }) {
                 itemStyle={{ color: "#22c55e" }}
                 formatter={(value) => [value.toFixed(4), "Rate"]}
               />
-              <Area
+              <Line
                 type="monotone"
                 dataKey="rate"
                 stroke="#22c55e"
                 strokeWidth={2}
-                fillOpacity={1}
-                fill="url(#colorRate)"
+                dot={false}
                 activeDot={{ r: 4, fill: "#22c55e", stroke: "#0a0a0a", strokeWidth: 2 }}
               />
-            </AreaChart>
+            </LineChart>
           </ResponsiveContainer>
         </div>
       </CardContent>

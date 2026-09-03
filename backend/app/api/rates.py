@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Query, HTTPException
 from sqlalchemy.orm import Session
 
 from app.database.base import get_db
-from app.services.historical import get_historical_data
+from app.services.exchange_rate import get_historical_data
 
 router = APIRouter()
 
