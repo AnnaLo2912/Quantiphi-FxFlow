@@ -16,7 +16,7 @@ const POPULAR = ["USD", "EUR", "GBP", "INR", "JPY", "CHF", "CAD", "AUD", "CNY"];
 export default function ConverterCard({ onPairChange }) {
   const [from, setFrom] = useState("USD");
   const [to, setTo] = useState("INR");
-  const [amount, setAmount] = useState("50000");
+  const [amount, setAmount] = useState("1000");
   const [result, setResult] = useState(null);
 
   const { data: currencyData } = useQuery({
@@ -56,185 +56,161 @@ export default function ConverterCard({ onPairChange }) {
   const getCurrencyName = (code) => currencies.find((c) => c.code === code)?.name || code;
 
   return (
-    <div className="space-y-6">
-      {/* Exchange Form */}
-      <Card className="border-border/50 bg-card/90 backdrop-blur-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-border/50">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-foreground">Exchange</h2>
-            <Button variant="ghost" size="sm" onClick={handleFavorite} className="gap-2 text-muted-foreground hover:text-cyan">
-              <Star className="w-4 h-4" />
-              Save Pair
+    <Card className="border-border/50 bg-card h-full">
+      <div className="px-5 py-3.5 border-b border-border/50">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-foreground">Currency Converter</h2>
+          <Button variant="ghost" size="sm" onClick={handleFavorite} className="gap-1.5 text-muted-foreground hover:text-green h-8 px-2">
+            <Star className="w-3.5 h-3.5" />
+            <span className="text-xs">Save</span>
+          </Button>
+        </div>
+      </div>
+
+      <CardContent className="p-5">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr,auto,1fr] gap-4 items-start">
+          {/* From */}
+          <div className="space-y-3">
+            <label className="text-[10px] font-medium text-green uppercase tracking-wider">From</label>
+            <Select value={from} onValueChange={(v) => { setFrom(v); setResult(null); }}>
+              <SelectTrigger className="h-12 bg-[#1a1a1a] border-border/50 text-sm">
+                <div className="flex items-center gap-2">
+                  <CurrencyFlag code={from} size="sm" />
+                  <SelectValue />
+                </div>
+              </SelectTrigger>
+              <SelectContent className="bg-[#1a1a1a] border-border/50 shadow-xl shadow-black/50 max-h-[250px]">
+                {currencies.map((c) => (
+                  <SelectItem key={c.code} value={c.code} className="py-2">
+                    <div className="flex items-center gap-2">
+                      <CurrencyFlag code={c.code} size="sm" />
+                      <span className="font-medium text-sm">{c.code}</span>
+                      <span className="text-muted-foreground text-xs">{c.name}</span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Input
+              type="number"
+              value={amount}
+              onChange={(e) => { setAmount(e.target.value); setResult(null); }}
+              className="h-12 text-base font-semibold"
+              placeholder="Amount"
+              min="0"
+            />
+            <p className="text-[11px] text-muted-foreground">{getCurrencyName(from)}</p>
+          </div>
+
+          {/* Swap */}
+          <div className="flex justify-center lg:pt-8">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={handleSwap}
+              className="rounded-full h-10 w-10 border-green/30 hover:border-green hover:bg-green/10 transition-all"
+            >
+              <ArrowLeftRight className="w-4 h-4 text-green" />
             </Button>
+          </div>
+
+          {/* To */}
+          <div className="space-y-3">
+            <label className="text-[10px] font-medium text-green uppercase tracking-wider">To</label>
+            <Select value={to} onValueChange={(v) => { setTo(v); setResult(null); }}>
+              <SelectTrigger className="h-12 bg-[#1a1a1a] border-border/50 text-sm">
+                <div className="flex items-center gap-2">
+                  <CurrencyFlag code={to} size="md" />
+                  <SelectValue />
+                </div>
+              </SelectTrigger>
+              <SelectContent className="bg-[#1a1a1a] border-border/50 shadow-xl shadow-black/50 max-h-[250px]">
+                {currencies.map((c) => (
+                  <SelectItem key={c.code} value={c.code} className="py-2">
+                    <div className="flex items-center gap-2">
+                      <CurrencyFlag code={c.code} size="sm" />
+                      <span className="font-medium text-sm">{c.code}</span>
+                      <span className="text-muted-foreground text-xs">{c.name}</span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Input
+              readOnly
+              value={result ? formatNumber(result.converted_amount) : ""}
+              className="h-12 text-base font-semibold bg-[#111]/60 border-border/50"
+              placeholder="0.00"
+            />
+            {result && (
+              <p className="text-[11px] text-muted-foreground">{getCurrencyName(to)}</p>
+            )}
           </div>
         </div>
 
-        <CardContent className="p-6">
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr,auto,1fr] gap-6 items-start">
-            {/* Sell Side */}
-            <div className="space-y-4">
-              <div>
-                <label className="text-xs font-medium text-cyan uppercase tracking-wider mb-2 block">Currency I Want To Sell</label>
-                <Select value={from} onValueChange={(v) => { setFrom(v); setResult(null); }}>
-                  <SelectTrigger className="h-14 bg-[#1a2540] border-border/50 text-base">
-                    <div className="flex items-center gap-3">
-                      <CurrencyFlag code={from} size="md" />
-                      <SelectValue />
-                    </div>
-                  </SelectTrigger>
-                  <SelectContent className="max-h-[300px] bg-[#162032] border-border/50 shadow-xl shadow-black/50">
-                    {currencies.map((c) => (
-                      <SelectItem key={c.code} value={c.code} className="py-3">
-                        <div className="flex items-center gap-3">
-                          <CurrencyFlag code={c.code} size="sm" />
-                          <div>
-                            <span className="font-medium">{c.code}</span>
-                            <span className="text-muted-foreground ml-2 text-xs">{c.name}</span>
-                          </div>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <label className="text-xs font-medium text-cyan uppercase tracking-wider mb-2 block">Sell Amount</label>
-                <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground text-lg">$</span>
-                  <Input
-                    type="number"
-                    value={amount}
-                    onChange={(e) => { setAmount(e.target.value); setResult(null); }}
-                    className="pl-10 h-14 text-lg font-semibold bg-secondary/50 border-border/50"
-                    placeholder="0.00"
-                    min="0"
-                  />
-                </div>
-                <p className="text-xs text-muted-foreground mt-2">Available Balance: —</p>
-              </div>
-            </div>
-
-            {/* Swap Button */}
-            <div className="flex justify-center lg:pt-10">
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={handleSwap}
-                className="rounded-full h-12 w-12 border-cyan/30 hover:border-cyan hover:bg-cyan/10 transition-all"
-              >
-                <ArrowLeftRight className="w-5 h-5 text-cyan" />
-              </Button>
-            </div>
-
-            {/* Buy Side */}
-            <div className="space-y-4">
-              <div>
-                <label className="text-xs font-medium text-cyan uppercase tracking-wider mb-2 block">Currency I Want To Buy</label>
-                <Select value={to} onValueChange={(v) => { setTo(v); setResult(null); }}>
-                  <SelectTrigger className="h-14 bg-[#1a2540] border-border/50 text-base">
-                    <div className="flex items-center gap-3">
-                      <CurrencyFlag code={to} size="md" />
-                      <SelectValue />
-                    </div>
-                  </SelectTrigger>
-                  <SelectContent className="max-h-[300px] bg-[#162032] border-border/50 shadow-xl shadow-black/50">
-                    {currencies.map((c) => (
-                      <SelectItem key={c.code} value={c.code} className="py-3">
-                        <div className="flex items-center gap-3">
-                          <CurrencyFlag code={c.code} size="sm" />
-                          <div>
-                            <span className="font-medium">{c.code}</span>
-                            <span className="text-muted-foreground ml-2 text-xs">{c.name}</span>
-                          </div>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <label className="text-xs font-medium text-cyan uppercase tracking-wider mb-2 block">You Will Receive</label>
-                <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground text-lg">₹</span>
-                  <Input
-                    readOnly
-                    value={result ? formatNumber(result.converted_amount) : ""}
-                    className="pl-10 h-14 text-lg font-semibold bg-secondary/30 border-border/50"
-                    placeholder="0.00"
-                  />
-                </div>
-                {result && (
-                  <p className="text-xs text-muted-foreground mt-2">
-                    1 {result.from} = {formatNumber(result.rate)} {result.to}
-                  </p>
-                )}
-              </div>
-            </div>
+        {/* Rate */}
+        {result && (
+          <div className="mt-4 flex items-center justify-center gap-2 text-xs text-muted-foreground">
+            <span>1 {result.from} = {formatNumber(result.rate)} {result.to}</span>
+            <span className="text-border">|</span>
+            <Clock className="w-3 h-3" />
+            <span>Live</span>
           </div>
+        )}
 
-          {/* Convert Button */}
-          <div className="mt-8">
-            <Button
-              onClick={handleConvert}
-              disabled={convertMutation.isPending}
-              className="w-full h-14 text-base font-semibold bg-cyan hover:bg-cyan/90 text-primary-foreground transition-all"
-            >
-              {convertMutation.isPending ? (
-                <RefreshCw className="w-5 h-5 mr-2 animate-spin" />
-              ) : (
-                <TrendingUp className="w-5 h-5 mr-2" />
-              )}
-              {convertMutation.isPending ? "Converting..." : "Convert"}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+        {/* Convert */}
+        <div className="mt-4">
+          <Button
+            onClick={handleConvert}
+            disabled={convertMutation.isPending}
+            className="w-full h-12 text-sm font-semibold bg-green hover:bg-green/90 text-black transition-all"
+          >
+            {convertMutation.isPending ? (
+              <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+            ) : (
+              <TrendingUp className="w-4 h-4 mr-2" />
+            )}
+            {convertMutation.isPending ? "Converting..." : "Convert"}
+          </Button>
+        </div>
+      </CardContent>
 
       {/* Conversion Details */}
       {result && (
-        <Card className="border-border/50 bg-card/90 backdrop-blur-sm">
-          <CardContent className="p-6">
-            <h3 className="text-sm font-semibold text-foreground mb-4">Your Conversion Details</h3>
-            <div className="space-y-2">
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground">Selling:</span>
-                <span className="text-sm font-medium">{formatCurrency(result.amount, result.from)}</span>
+        <div className="px-5 pb-5">
+          <Card className="bg-[#111] border-border/30">
+            <CardContent className="p-4">
+              <h4 className="text-xs font-semibold text-foreground mb-3">Conversion Details</h4>
+              <div className="space-y-1.5">
+                <div className="flex justify-between items-center">
+                  <span className="text-xs text-muted-foreground">You Send</span>
+                  <span className="text-xs font-medium">{formatCurrency(result.amount, result.from)}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-xs text-muted-foreground">You Receive</span>
+                  <span className="text-xs font-medium text-green">{formatCurrency(result.converted_amount, result.to)}</span>
+                </div>
+                <Separator className="my-2" />
+                <div className="flex justify-between items-center">
+                  <span className="text-xs text-muted-foreground">Rate</span>
+                  <span className="text-xs font-medium">1 {result.from} = {formatNumber(result.rate)} {result.to}</span>
+                </div>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground">Buying:</span>
-                <span className="text-sm font-medium text-cyan">{formatCurrency(result.converted_amount, result.to)}</span>
-              </div>
-              <Separator className="my-3" />
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground">Exchange Rate:</span>
-                <span className="text-sm font-medium">1 {result.from} = {formatNumber(result.rate)} {result.to}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground flex items-center gap-1">
-                  <Clock className="w-3 h-3" />
-                  Last Updated:
-                </span>
-                <span className="text-xs text-muted-foreground">Live Rate</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </div>
       )}
 
-      {/* Error State */}
+      {/* Error */}
       {convertMutation.isError && (
-        <Card className="border-destructive/20 bg-destructive/5">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 text-destructive">
-              <AlertCircle className="w-4 h-4" />
-              <p className="text-sm">{convertMutation.error.message}</p>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="px-5 pb-5">
+          <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 text-destructive" />
+            <p className="text-xs text-destructive">{convertMutation.error.message}</p>
+          </div>
+        </div>
       )}
-    </div>
+    </Card>
   );
 }
 

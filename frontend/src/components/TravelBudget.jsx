@@ -13,11 +13,13 @@ import CurrencyFlag from "@/components/CurrencyFlag";
 
 const CURRENCIES = ["USD", "EUR", "GBP", "INR", "JPY", "CHF", "CAD", "AUD", "CNY", "BRL"];
 
-export default function TravelBudget() {
-  const [enabled, setEnabled] = useState(false);
+export default function TravelBudget({ forceOpen = false }) {
+  const [enabled, setEnabled] = useState(forceOpen);
   const [baseCurrency, setBaseCurrency] = useState("USD");
   const [amount, setAmount] = useState("5000");
   const [result, setResult] = useState(null);
+
+  const showContent = forceOpen || enabled;
 
   const mutation = useMutation({
     mutationFn: ({ baseCurrency, amount }) => calculateTravelBudget(baseCurrency, parseFloat(amount)),
@@ -31,79 +33,72 @@ export default function TravelBudget() {
   };
 
   return (
-    <Card className="border-border/50 bg-card/90">
-      <CardContent className="p-6">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-cyan/10 flex items-center justify-center">
-              <Plane className="w-4 h-4 text-cyan" />
+    <Card className="border-border/50 bg-card h-full">
+      <CardContent className="p-5">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-lg bg-green/10 flex items-center justify-center">
+              <Plane className="w-3.5 h-3.5 text-green" />
             </div>
             <div>
-              <h3 className="text-sm font-semibold text-foreground">Travel Budget</h3>
-              <p className="text-xs text-muted-foreground">Compare your budget across currencies</p>
+              <h3 className="text-xs font-semibold text-foreground">Travel Budget</h3>
+              <p className="text-[10px] text-muted-foreground">Compare across currencies</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground">{enabled ? "ON" : "OFF"}</span>
-            <Switch checked={enabled} onCheckedChange={setEnabled} />
-          </div>
+          {!forceOpen && (
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] text-muted-foreground">{enabled ? "ON" : "OFF"}</span>
+              <Switch checked={enabled} onCheckedChange={setEnabled} />
+            </div>
+          )}
         </div>
 
-        {enabled && (
-          <div className="space-y-5">
-            <div className="grid grid-cols-1 sm:grid-cols-[1fr,1fr,auto] gap-3">
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-cyan uppercase tracking-wider">Base Currency</label>
-                <Select value={baseCurrency} onValueChange={setBaseCurrency}>
-                  <SelectTrigger className="h-11 bg-[#1a2540]">
-                    <div className="flex items-center gap-2">
-                      <CurrencyFlag code={baseCurrency} size="sm" />
-                      <SelectValue />
-                    </div>
-                  </SelectTrigger>
-                  <SelectContent className="bg-[#162032] border-border/50 shadow-xl shadow-black/50">
-                    {CURRENCIES.map((c) => (
-                      <SelectItem key={c} value={c}>
-                        <div className="flex items-center gap-2">
-                          <CurrencyFlag code={c} size="sm" />
-                          {c}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+        {showContent && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-[1fr,1fr,auto] gap-2">
+              <Select value={baseCurrency} onValueChange={setBaseCurrency}>
+                <SelectTrigger className="h-10 bg-[#1a1a1a] text-xs">
+                  <div className="flex items-center gap-1.5">
+                    <CurrencyFlag code={baseCurrency} size="sm" />
+                    <SelectValue />
+                  </div>
+                </SelectTrigger>
+                <SelectContent className="bg-[#1a1a1a] border-border/50 shadow-xl shadow-black/50">
+                  {CURRENCIES.map((c) => (
+                    <SelectItem key={c} value={c} className="text-xs">
+                      <div className="flex items-center gap-1.5">
+                        <CurrencyFlag code={c} size="sm" />
+                        {c}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
 
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-cyan uppercase tracking-wider">Amount</label>
-                <Input
-                  type="number"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  placeholder="Budget amount"
-                  min="0"
-                  className="h-11 bg-[#1a2540]"
-                />
-              </div>
+              <Input
+                type="number"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                placeholder="Amount"
+                min="0"
+                className="h-10 text-xs"
+              />
 
-              <div className="flex items-end">
-                <Button onClick={handleCalculate} disabled={mutation.isPending} className="h-11 bg-cyan hover:bg-cyan/90 text-primary-foreground">
-                  {mutation.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Globe className="w-4 h-4 mr-2" />}
-                  {mutation.isPending ? "Calculating..." : "Compare"}
-                </Button>
-              </div>
+              <Button onClick={handleCalculate} disabled={mutation.isPending} className="h-10 bg-green hover:bg-green/90 text-black text-xs px-3">
+                {mutation.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Globe className="w-3.5 h-3.5" />}
+              </Button>
             </div>
 
             {mutation.isError && (
-              <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20">
-                <p className="text-sm text-destructive">{mutation.error.message}</p>
+              <div className="p-2 rounded bg-destructive/10 border border-destructive/20">
+                <p className="text-[11px] text-destructive">{mutation.error.message}</p>
               </div>
             )}
 
             {mutation.isPending && (
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 {[1, 2, 3].map((i) => (
-                  <Skeleton key={i} className="h-12 w-full" />
+                  <Skeleton key={i} className="h-9 w-full" />
                 ))}
               </div>
             )}
@@ -113,19 +108,19 @@ export default function TravelBudget() {
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-secondary/30">
-                      <TableHead className="text-xs font-medium uppercase tracking-wider">Currency</TableHead>
-                      <TableHead className="text-xs font-medium uppercase tracking-wider text-right">Equivalent</TableHead>
+                      <TableHead className="text-[10px] font-medium uppercase tracking-wider h-8">Currency</TableHead>
+                      <TableHead className="text-[10px] font-medium uppercase tracking-wider text-right h-8">Amount</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     <TableRow className="bg-secondary/10">
-                      <TableCell>
-                        <div className="flex items-center gap-2">
+                      <TableCell className="py-2">
+                        <div className="flex items-center gap-1.5">
                           <CurrencyFlag code={result.base_currency} size="sm" />
-                          <span className="font-medium">{result.base_currency}</span>
+                          <span className="text-xs font-medium">{result.base_currency}</span>
                         </div>
                       </TableCell>
-                      <TableCell className="text-right font-semibold text-cyan">
+                      <TableCell className="text-right py-2 text-xs font-semibold text-green">
                         {new Intl.NumberFormat("en-US", { minimumFractionDigits: 2 }).format(result.amount)}
                       </TableCell>
                     </TableRow>
@@ -133,13 +128,13 @@ export default function TravelBudget() {
                       .filter((c) => c.currency !== result.base_currency)
                       .map((c) => (
                         <TableRow key={c.currency} className="hover:bg-secondary/20">
-                          <TableCell>
-                            <div className="flex items-center gap-2">
+                          <TableCell className="py-2">
+                            <div className="flex items-center gap-1.5">
                               <CurrencyFlag code={c.currency} size="sm" />
-                              <span className="font-medium">{c.currency}</span>
+                              <span className="text-xs font-medium">{c.currency}</span>
                             </div>
                           </TableCell>
-                          <TableCell className="text-right">
+                          <TableCell className="text-right py-2 text-xs">
                             {new Intl.NumberFormat("en-US", { minimumFractionDigits: 2 }).format(c.amount)}
                           </TableCell>
                         </TableRow>

@@ -16,11 +16,11 @@ export default function BackgroundEffect() {
     resize();
     window.addEventListener("resize", resize);
 
-    const particles = Array.from({ length: 40 }, () => ({
+    const particles = Array.from({ length: 30 }, () => ({
       x: Math.random() * canvas.width,
       y: Math.random() * canvas.height,
-      vx: (Math.random() - 0.5) * 0.2,
-      vy: (Math.random() - 0.5) * 0.2,
+      vx: (Math.random() - 0.5) * 0.15,
+      vy: (Math.random() - 0.5) * 0.15,
       size: Math.random() * 1.5 + 0.5,
     }));
 
@@ -35,7 +35,7 @@ export default function BackgroundEffect() {
 
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        ctx.fillStyle = "rgba(34, 211, 238, 0.12)";
+        ctx.fillStyle = "rgba(34, 197, 94, 0.08)";
         ctx.fill();
       });
 
@@ -44,11 +44,11 @@ export default function BackgroundEffect() {
           const dx = particles[i].x - particles[j].x;
           const dy = particles[i].y - particles[j].y;
           const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < 120) {
+          if (dist < 100) {
             ctx.beginPath();
             ctx.moveTo(particles[i].x, particles[i].y);
             ctx.lineTo(particles[j].x, particles[j].y);
-            ctx.strokeStyle = `rgba(34, 211, 238, ${0.02 * (1 - dist / 120)})`;
+            ctx.strokeStyle = `rgba(34, 197, 94, ${0.015 * (1 - dist / 100)})`;
             ctx.lineWidth = 0.5;
             ctx.stroke();
           }
@@ -70,7 +70,7 @@ export default function BackgroundEffect() {
     <canvas
       ref={canvasRef}
       className="fixed inset-0 pointer-events-none z-0"
-      style={{ opacity: 0.5 }}
+      style={{ opacity: 0.4 }}
     />
   );
 }
