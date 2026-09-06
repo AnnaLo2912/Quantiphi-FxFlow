@@ -62,26 +62,16 @@ async def get_historical_data(db: Session, base: str, target: str, days: int = 3
     base = base.upper()
     target = target.upper()
 
+    today = datetime.utcnow().date()
+    cache_key = f"historical:{base}:{target}:{today}"
+    cached = _get_cached(db, cache_key)
+    if cached:
+        return cached
+
+    start_date = today - timedelta(days=days + 7)
+
     async with httpx.AsyncClient(timeout=10.0) as client:
-        latest_resp = await client.get(
-            f"{FRANKFURTER_BASE_URL}/latest",
-            params={"base": base, "symbols": target},
-        )
-        latest_resp.raise_for_status()
-        latest_data = latest_resp.json()
-
-        latest_date = latest_data.get("date")
-        if not latest_date:
-            raise Exception("Frankfurter returned no latest date")
-
-        end_date = datetime.strptime(latest_date, "%Y-%m-%d").date()
-        start_date = end_date - timedelta(days=days - 1)
-        cache_key = f"historical:{base}:{target}:{start_date}:{end_date}"
-        cached = _get_cached(db, cache_key)
-        if cached:
-            return cached
-
-        url = f"{FRANKFURTER_BASE_URL}/{start_date}..{end_date}"
+        url = f"{FRANKFURTER_BASE_URL}/{start_date}..{today}"
         resp = await client.get(url, params={"base": base, "symbols": target})
         resp.raise_for_status()
         data = resp.json()
