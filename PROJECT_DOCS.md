@@ -6,7 +6,7 @@ FxFlow is a **full-stack real-time currency converter** built with:
 - **Frontend:** React + Vite + Tailwind CSS (runs on port 5173)
 - **Backend:** Python + FastAPI (runs on port 8000)
 - **Database:** SQLite (file: `fxflow.db`)
-- **External API:** ExchangeRate-API (live currency rates)
+- **External API:** Frankfurter API (free, no key required)
 
 ### How It Works (Simple Terms)
 
@@ -21,7 +21,7 @@ Frontend sends request to /api/convert
         ↓
 FastAPI backend receives request (port 8000)
         ↓
-Backend calls ExchangeRate-API for live rate
+Backend calls Frankfurter API for live rate
         ↓
 Rate cached in SQLite for 5 minutes
         ↓
@@ -47,7 +47,7 @@ Vite dev server proxies `/api/*` requests to `localhost:8000` (backend). This me
 get_live_rate(base, target):
   1. Check SQLite cache for key "live:USD:INR"
   2. If cache exists and not expired (5 min TTL) → return cached rate
-  3. If no cache → call ExchangeRate-API: https://v6.exchangerate-api.com/v6/{KEY}/latest/USD
+  3. If no cache → call Frankfurter: https://api.frankfurter.dev/v1/latest?base=USD&symbols=INR
   4. Extract rate for target currency from response
   5. Save to cache with expiry time
   6. Return rate
@@ -123,7 +123,7 @@ calculate_travel_budget(db, base_currency, amount):
 **Logic:**
 ```
 list_currencies(db):
-  1. Try to fetch from ExchangeRate-API: /codes endpoint
+  1. Fetch supported currencies from Frankfurter: /currencies endpoint
   2. If API returns >10 currencies → use API data
   3. If API fails or returns few results → use hardcoded FULL_CURRENCY_LIST (164 currencies)
   4. Cache result for 1 hour
@@ -221,7 +221,7 @@ list_currencies(db):
 
 ### Issue 1: Historical Data Not Loading (White Chart)
 **Problem:** Chart showed "Unable to load historical data" or stayed blank.
-**Root Cause:** ExchangeRate-API free tier doesn't support per-pair historical endpoints. The frontend was waiting for real historical data that never came.
+**Root Cause:** Previously used ExchangeRate-API free tier which doesn't support per-pair historical endpoints. Now using Frankfurter API which supports historical data natively.
 **Fix:** Created synthetic historical data generator using seeded random walk. Generates 30 days of realistic-looking data anchored to the current live rate. Same currency pair always shows the same chart (deterministic via hash seed).
 
 ### Issue 2: Currency List Only Showing USD Currencies
@@ -281,9 +281,8 @@ list_currencies(db):
 
 **Backend `.env`:**
 ```
-EXCHANGE_RATE_API_KEY=cf4e766d76b86a661ca4c636
-EXCHANGE_RATE_BASE_URL=https://v6.exchangerate-api.com/v6
 DATABASE_URL=sqlite:///./fxflow.db
+FRANKFURTER_BASE_URL=https://api.frankfurter.dev/v1
 ```
 
 ---

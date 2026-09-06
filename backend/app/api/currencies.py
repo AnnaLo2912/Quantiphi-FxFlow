@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.database.base import get_db
@@ -168,9 +168,6 @@ FULL_CURRENCY_LIST = [
 @router.get("/currencies")
 async def list_currencies(db: Session = Depends(get_db)):
     try:
-        result = await get_available_currencies(db)
-        if result.get("currencies") and len(result["currencies"]) > 10:
-            return result
-    except Exception:
-        pass
-    return {"currencies": FULL_CURRENCY_LIST}
+        return await get_available_currencies(db)
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Failed to fetch supported currencies: {str(e)}")

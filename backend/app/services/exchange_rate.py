@@ -5,8 +5,6 @@ import httpx
 from sqlalchemy.orm import Session
 
 from app.core.config import (
-    EXCHANGE_RATE_API_KEY,
-    EXCHANGE_RATE_BASE_URL,
     FRANKFURTER_BASE_URL,
     CACHE_TTL_LIVE,
     CACHE_TTL_HISTORICAL,
@@ -39,16 +37,13 @@ async def get_live_rate(db: Session, base: str, target: str) -> dict:
     if cached:
         return cached
 
-    url = f"{EXCHANGE_RATE_BASE_URL}/{EXCHANGE_RATE_API_KEY}/latest/{base}"
+    url = f"{FRANKFURTER_BASE_URL}/latest"
     async with httpx.AsyncClient(timeout=10.0) as client:
-        resp = await client.get(url)
+        resp = await client.get(url, params={"base": base, "symbols": target})
         resp.raise_for_status()
         data = resp.json()
 
-    if data.get("result") != "success":
-        raise Exception(f"API error: {data.get('error-type', 'unknown')}")
-
-    rates = data.get("conversion_rates", {})
+    rates = data.get("rates", {})
     rate = rates.get(target)
     if rate is None:
         raise Exception(f"Currency {target} not found in rates")
@@ -57,7 +52,7 @@ async def get_live_rate(db: Session, base: str, target: str) -> dict:
         "base": base,
         "target": target,
         "rate": rate,
-        "timestamp": data.get("time_last_update_utc", ""),
+        "timestamp": data.get("date", ""),
     }
     _set_cache(db, cache_key, result, CACHE_TTL_LIVE)
     return result
@@ -113,21 +108,35 @@ async def get_historical_data(db: Session, base: str, target: str, days: int = 3
 
 
 async def get_available_currencies(db: Session) -> dict:
-    cache_key = "currencies"
+    cache_key = "frankfurter_supported_currencies_v2"
     cached = _get_cached(db, cache_key)
     if cached:
         return cached
 
-    url = f"{EXCHANGE_RATE_BASE_URL}/{EXCHANGE_RATE_API_KEY}/codes"
+    url = f"{FRANKFURTER_BASE_URL}/currencies"
     async with httpx.AsyncClient(timeout=10.0) as client:
         resp = await client.get(url)
         resp.raise_for_status()
         data = resp.json()
 
-    if data.get("result") != "success":
-        raise Exception("Failed to fetch currencies")
+        rates_resp = await client.get(
+            f"{FRANKFURTER_BASE_URL}/latest",
+            params={"base": "EUR"},
+        )
+        rates_resp.raise_for_status()
+        rates_data = rates_resp.json()
 
-    codes = [{"code": c[0], "name": c[1]} for c in data.get("supported_codes", [])]
+    if not isinstance(data, dict) or not data:
+        raise Exception("Frankfurter returned no currencies")
+    if not isinstance(rates_data.get("rates"), dict):
+        raise Exception("Frankfurter returned no supported rates")
+
+    supported_codes = set(rates_data["rates"]) | {"EUR"}
+    codes = [
+        {"code": code, "name": data[code]}
+        for code in sorted(supported_codes)
+        if code in data
+    ]
     result = {"currencies": codes}
     _set_cache(db, cache_key, result, CACHE_TTL_HISTORICAL)
     return result

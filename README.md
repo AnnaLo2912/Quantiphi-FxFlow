@@ -198,9 +198,8 @@ FxFlow/
 ### Backend (`backend/.env`)
 
 ```
-EXCHANGE_RATE_API_KEY=your_api_key_here
-EXCHANGE_RATE_BASE_URL=https://v6.exchangerate-api.com/v6
 DATABASE_URL=sqlite:///./fxflow.db
+FRANKFURTER_BASE_URL=https://api.frankfurter.dev/v1
 ```
 
 ---
@@ -211,7 +210,7 @@ DATABASE_URL=sqlite:///./fxflow.db
 
 - Python 3.10+
 - Node.js 18+
-- ExchangeRate API key (free at https://www.exchangerate-api.com/)
+- No API key required (uses free Frankfurter API)
 
 ### Backend
 
@@ -285,13 +284,11 @@ Vercel's filesystem is ephemeral, so use a hosted PostgreSQL database for favori
 Add these variables in **Project Settings > Environment Variables**:
 
 ```text
-EXCHANGE_RATE_API_KEY=your_exchange_rate_api_key
-EXCHANGE_RATE_BASE_URL=https://v6.exchangerate-api.com/v6
 FRANKFURTER_BASE_URL=https://api.frankfurter.dev/v1
 DATABASE_URL=your_postgresql_connection_url
 ```
 
-Do not commit `.env` files or API keys. The frontend uses same-origin `/api` requests, so no frontend API URL variable is required.
+Do not commit `.env` files. For Vercel frontend, set `VITE_API_BASE` to your Render backend URL (e.g., `https://fxflow-backend.onrender.com/api`).
 
 ### 4. Deploy and verify
 
