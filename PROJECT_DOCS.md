@@ -305,11 +305,45 @@ Open http://localhost:5173
 
 ---
 
+## Deployment Issues & Fixes
+
+### Deployment Issue 1: pydantic-core Build Failure (Rust/Maturin)
+**Problem:** Vercel build failed with `maturin failed` error while building `pydantic-core==2.23.4`. The build tried to compile Rust code and failed.
+**Root Cause:** Vercel auto-selected Python 3.14, but `pydantic-core` 2.23.4 doesn't have pre-built wheels for Python 3.14. It tried to compile from source using Rust (maturin), which failed in Vercel's build environment.
+**Fix:** Upgraded `pydantic==2.9.2` to `pydantic>=2.10.0` in `requirements.txt`. Pydantic 2.10+ ships pre-built wheels for Python 3.14, so no Rust compilation is needed.
+
+### Deployment Issue 2: Vercel Ignoring .python-version
+**Problem:** Added `.python-version` file with `3.12` to force Python 3.12, but Vercel still used Python 3.14.7.
+**Root Cause:** Vercel's `uv` package installer doesn't always respect `.python-version` in all build contexts. The `pyproject.toml` with `requires-python` was also ignored.
+**Fix:** Instead of fighting Python version selection, upgraded `pydantic` to a version that supports Python 3.14 (the real fix above). Removed `.python-version` and `pyproject.toml` to avoid confusion.
+
+### Deployment Issue 3: Missing @tailwindcss/vite Dependency
+**Problem:** Frontend build failed with `Cannot find package '@tailwindcss/vite'`. The build command ran but Vite couldn't resolve the Tailwind CSS plugin.
+**Root Cause:** `@tailwindcss/vite` and `tailwindcss` were imported in `vite.config.js` but not listed in `frontend/package.json`. They were installed locally (probably via global or parent node_modules) but not declared as project dependencies.
+**Fix:** Added `"@tailwindcss/vite": "^4.1.0"` and `"tailwindcss": "^4.1.0"` to `devDependencies` in `frontend/package.json`.
+
+### Deployment Issue 4: SQLite Not Working on Vercel
+**Problem:** All API endpoints returned errors after deployment. Converter, historical data, favorites — nothing worked.
+**Root Cause:** Vercel serverless functions have ephemeral filesystems. The SQLite database path `sqlite:///./fxflow.db` pointed to a directory that either doesn't exist or isn't writable in Vercel's execution environment. Also, `init_db()` could fail silently, leaving no tables for any queries.
+**Fix:** 
+1. Changed default SQLite path to use `tempfile.gettempdir()` which resolves to `/tmp` on Vercel (the only writable directory).
+2. Wrapped all database operations (`_get_cached`, `_set_cache`, `init_db`, `get_db`, conversion history save) in try/except blocks so the app works even if SQLite fails. Core features (convert, chart, currencies) call Frankfurter API directly without depending on the database.
+
+### Deployment Issue 5: Historical Data Timeout
+**Problem:** Historical chart showed "Unable to load historical data" on Vercel.
+**Root Cause:** The `get_historical_data` function made 2 sequential API calls to Frankfurter: first to get the latest date, then to fetch the historical range. On Vercel free tier (10-second function timeout), both calls together could exceed the limit.
+**Fix:** Reduced to 1 API call by using `datetime.utcnow().date()` for the end date instead of querying Frankfurter for it. Requested `days + 7` to account for weekends/holidays.
+
+---
+
 ## Deployment (Vercel)
 
 The `vercel.json` configures:
 - Frontend build: `cd frontend && npm install && npm run build`
 - Output: `frontend/dist`
-- API rewrite: `/api/*` → backend
+- API rewrite: `/api/*` → `/api/index.py` (serverless FastAPI function)
+- SPA fallback: `/(.*)` → `/index.html`
 
-**Note:** Backend needs separate hosting (Railway, Render, etc.) since SQLite requires filesystem access which Vercel serverless functions don't provide persistently.
+`api/index.py` bridges Vercel serverless functions to the FastAPI app by adding `backend/` to `sys.path` and importing the app.
+
+**Note:** SQLite data (favorites, history, cache) resets on Vercel cold starts. Core features (conversion, chart, currencies) work without persistence.
