@@ -1,4 +1,5 @@
 import json
+import logging
 from datetime import datetime, timedelta
 
 import httpx
@@ -11,24 +12,32 @@ from app.core.config import (
 )
 from app.models.rate_cache import RateCache
 
+logger = logging.getLogger(__name__)
+
 
 def _get_cached(db: Session, key: str) -> dict | None:
-    row = db.query(RateCache).filter(RateCache.cache_key == key).first()
-    if row and row.expires_at > datetime.utcnow():
-        return json.loads(row.data)
+    try:
+        row = db.query(RateCache).filter(RateCache.cache_key == key).first()
+        if row and row.expires_at > datetime.utcnow():
+            return json.loads(row.data)
+    except Exception as e:
+        logger.warning(f"Cache read failed: {e}")
     return None
 
 
 def _set_cache(db: Session, key: str, data: dict, ttl: int):
-    existing = db.query(RateCache).filter(RateCache.cache_key == key).first()
-    serialized = json.dumps(data)
-    expires = datetime.utcnow() + timedelta(seconds=ttl)
-    if existing:
-        existing.data = serialized
-        existing.expires_at = expires
-    else:
-        db.add(RateCache(cache_key=key, data=serialized, expires_at=expires))
-    db.commit()
+    try:
+        existing = db.query(RateCache).filter(RateCache.cache_key == key).first()
+        serialized = json.dumps(data)
+        expires = datetime.utcnow() + timedelta(seconds=ttl)
+        if existing:
+            existing.data = serialized
+            existing.expires_at = expires
+        else:
+            db.add(RateCache(cache_key=key, data=serialized, expires_at=expires))
+        db.commit()
+    except Exception as e:
+        logger.warning(f"Cache write failed: {e}")
 
 
 async def get_live_rate(db: Session, base: str, target: str) -> dict:

@@ -1,7 +1,10 @@
+import logging
 from sqlalchemy.orm import Session
 
 from app.services.exchange_rate import get_live_rate
 from app.models.conversion_history import ConversionHistory
+
+logger = logging.getLogger(__name__)
 
 VALID_CURRENCIES = None  # validated at runtime via API
 
@@ -25,15 +28,18 @@ async def convert(db: Session, from_currency: str, to_currency: str, amount: flo
     rate = rate_data["rate"]
     converted = round(amount * rate, 2)
 
-    record = ConversionHistory(
-        source_currency=from_currency,
-        target_currency=to_currency,
-        amount=amount,
-        converted_amount=converted,
-        exchange_rate=rate,
-    )
-    db.add(record)
-    db.commit()
+    try:
+        record = ConversionHistory(
+            source_currency=from_currency,
+            target_currency=to_currency,
+            amount=amount,
+            converted_amount=converted,
+            exchange_rate=rate,
+        )
+        db.add(record)
+        db.commit()
+    except Exception as e:
+        logger.warning(f"Failed to save conversion history: {e}")
 
     return {
         "from": from_currency,
